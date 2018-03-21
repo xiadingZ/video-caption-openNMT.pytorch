@@ -27,7 +27,7 @@ if can_use_sru:
 # For flake8 compatibility.
 __all__ = [EncoderBase, MeanEncoder, RNNDecoderBase, InputFeedRNNDecoder,
            RNNEncoder, NMTModel,
-           StdRNNDecoder, ContextGate, GlobalAttention, ImageEncoder,
+           StdRNNDecoder, ContextGate, GlobalAttention, ImageEncoder, VideoEncoder,
            PositionwiseFeedForward, PositionalEncoding,
            CopyGenerator, MultiHeadedAttention,
            LayerNorm,

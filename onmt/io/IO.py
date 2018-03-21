@@ -208,7 +208,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
     
-   elif data_type == 'video':
+    elif data_type == 'video':
         dataset = VideoDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,

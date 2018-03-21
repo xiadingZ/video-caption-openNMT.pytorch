@@ -17,5 +17,5 @@ __all__ = [PAD_WORD, BOS_WORD, EOS_WORD, UNK, ONMTDatasetBase,
            load_fields_from_vocab, get_fields,
            save_fields_to_vocab, build_dataset,
            build_vocab, merge_vocabs, OrderedIterator,
-           TextDataset, ImageDataset, AudioDataset,
+           TextDataset, ImageDataset, VideoDataset, AudioDataset,
            ShardedTextCorpusIterator]

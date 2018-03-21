@@ -7,7 +7,7 @@ import torch
 import torchtext
 
 from onmt.io.DatasetBase import ONMTDatasetBase, PAD_WORD, BOS_WORD, EOS_WORD
-
+import numpy as np
 
 class VideoDataset(ONMTDatasetBase):
     """ Dataset for data_type=='video'
@@ -30,7 +30,7 @@ class VideoDataset(ONMTDatasetBase):
     def __init__(self, fields, src_examples_iter, tgt_examples_iter,
                  num_src_feats=0, num_tgt_feats=0,
                  tgt_seq_length=0, use_filter_pred=True):
-        self.data_type = 'img'
+        self.data_type = 'video'
 
         self.n_src_feats = num_src_feats
         self.n_tgt_feats = num_tgt_feats
@@ -64,26 +64,26 @@ class VideoDataset(ONMTDatasetBase):
 
         filter_pred = filter_pred if use_filter_pred else lambda x: True
 
-        super(Video, self).__init__(
+        super(VideoDataset, self).__init__(
             out_examples, out_fields, filter_pred
         )
 
     def sort_key(self, ex):
-        """ Sort using the size of the video: (width, height)."""
-        return (ex.src.size(2), ex.src.size(1))
+        """ shouldn't use this function"""
+        return (256, 256)
 
     @staticmethod
-    def make_image_examples_nfeats_tpl(path, img_dir):
+    def make_video_examples_nfeats_tpl(path, vid_dir):
         """
         Args:
-            path (str): location of a src file containing image paths
-            src_dir (str): location of source images
+            path (str): location of a src file containing video paths
+            src_dir (str): location of source videos
 
         Returns:
             (example_dict iterator, num_feats) tuple
         """
-        examples_iter = ImageDataset.read_img_file(path, img_dir, 'src')
-        num_feats = 0  # Source side(img) has no features.
+        examples_iter = VideoDataset.read_vid_file(path, vid_dir, 'src')
+        num_feats = 0  # Source side(vid) has no features.
 
         return (examples_iter, num_feats)
 
@@ -92,37 +92,26 @@ class VideoDataset(ONMTDatasetBase):
         """
         Args:
             path (str): location of a src file containing video paths
-            src_dir (str): location of source images
+            src_dir (str): location of source videos
             side (str): 'src' or 'tgt'
-            truncate: maximum img size ((0,0) or None for unlimited)
 
         Yields:
-            a dictionary containing image data, path and index for each line.
+            a dictionary containing video data, path and index for each line.
         """
         assert (src_dir is not None) and os.path.exists(src_dir),\
             'src_dir must be a valid directory if data_type is video'
 
-        global Image, transforms
-        from torchvision import transforms
-
         with codecs.open(path, "r", "utf-8") as corpus_file:
             index = 0
             for line in corpus_file:
-                img_path = os.path.join(src_dir, line.strip())
-                if not os.path.exists(img_path):
-                    img_path = line
+                vid_name = line.split('.')[0]
+                feat_path = os.path.join(src_dir, vid_name+'.npy')
+                c3d_path = os.path.join(src_dir, vid_name+'_c3d.npy')
+                feat = torch.from_numpy(np.load(feat_path))
+                c3d = torch.from_numpy(np.load(c3d_path)).float()
+                vid = torch.cat((feat, c3d.repeat(feat.shape[0], 1)), dim=1)
 
-                assert os.path.exists(img_path), \
-                    'img path %s not found' % (line.strip())
-
-                #img = transforms.ToTensor()(Image.open(img_path))
-                # TODO load video feats
-                if truncate and truncate != (0, 0):
-                    if not (img.size(1) <= truncate[0]
-                            and img.size(2) <= truncate[1]):
-                        continue
-
-                example_dict = {side: img,
+                example_dict = {side: vid,
                                 side+'_path': line.strip(),
                                 'indices': index}
                 index += 1
@@ -144,18 +133,17 @@ class VideoDataset(ONMTDatasetBase):
         """
         fields = {}
 
-        def make_img(data, vocab, is_train):
-            c = data[0].size(0)
-            h = max([t.size(1) for t in data])
-            w = max([t.size(2) for t in data])
-            imgs = torch.zeros(len(data), c, h, w)
-            for i, img in enumerate(data):
-                imgs[i, :, 0:img.size(1), 0:img.size(2)] = img
-            return imgs
+        def make_vid(data, vocab, is_train):
+            seq_len = data[0].size(0)
+            dim_vid = data[0].size(1)
+            vids = torch.zeros(len(data), seq_len, dim_vid)
+            for i, vid in enumerate(data):
+                vids[i] = vid
+            return vids
 
         fields["src"] = torchtext.data.Field(
             use_vocab=False, tensor_type=torch.FloatTensor,
-            postprocessing=make_img, sequential=False)
+            postprocessing=make_vid, sequential=False)
 
         for j in range(n_src_features):
             fields["src_feat_"+str(j)] = \
@@ -203,7 +191,7 @@ class VideoDataset(ONMTDatasetBase):
     @staticmethod
     def get_num_features(corpus_file, side):
         """
-        For image corpus, source side is in form of image, thus
+        For video corpus, source side is in form of video, thus
         no feature; while target side is in form of text, thus
         we can extract its text features.
 
@@ -219,6 +207,6 @@ class VideoDataset(ONMTDatasetBase):
         else:
             with codecs.open(corpus_file, "r", "utf-8") as cf:
                 f_line = cf.readline().strip().split()
-                _, _, num_feats = ImageDataset.extract_text_features(f_line)
+                _, _, num_feats = VideoDataset.extract_text_features(f_line)
 
         return num_feats
