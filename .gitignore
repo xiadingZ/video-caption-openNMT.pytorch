@@ -1,5 +1,5 @@
 # repo-specific stuff
-pred.txt
+*.txt
 multi-bleu.perl
 *.pt
 *.ipynb
@@ -7,7 +7,6 @@ multi-bleu.perl
 .idea
 *.sublime-*
 .DS_Store
-data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
