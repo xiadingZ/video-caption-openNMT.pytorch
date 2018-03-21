@@ -2,6 +2,7 @@
 pred.txt
 multi-bleu.perl
 *.pt
+*.ipynb
 \#*#
 .idea
 *.sublime-*
