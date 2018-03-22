@@ -20,7 +20,7 @@ class VideoEncoder(nn.Module):
         super(VideoEncoder, self).__init__()
         self.num_layers = num_layers
         self.num_directions = 2 if bidirectional else 1
-        self.dim_hidden = rnn_size
+        self.dim_hidden = rnn_size // self.num_directions
         self.linear = nn.Linear(dim_vid, self.dim_hidden)
         self.dropout = nn.Dropout(dropout)
 
