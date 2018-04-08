@@ -1,3 +1,37 @@
+# Video caption usage
+
+
+0. preparocess data
+
+`python prepro_feats.py --output_dir data/feats/resnet152_origin --model resnet152 --n_frame_steps 40  --gpu 4,5`
+
+then, use [video-classification-3d-cnn-pytorch](https://github.com/kenshohara/video-classification-3d-cnn-pytorch) to
+ extract features from video. Then mean pool to get a 2048 dim feature for each video, save each feature as 
+ `{video id}_c3d.npy`, such as `video0_c3d.npy`, put them under `data/feats/resnet152_origin`.
+ 
+ Then write `src-train.txt, tgt-train.txt, src-val.txt, tgt-val.txt, src-test.txt, tgt-test.txt`, put them under `data`.
+ `src_train.txt` has video id line by line, such as `video0 \n video1`, `tgt_train.txt` has captions line by line, 
+ each line is a caption corresponding to video id in `src_train.txt`. Other files' format is the same as these two.
+
+
+1. train
+
+```bash
+python train.py -model_type video -data data/msrvtt/video -save_model data/save/model -gpuid 4 -batch_size 180 -max_grad_norm 20 -dim_vid 4096 -rnn_size 1024 -optim adam -learning_rate 0.001 -epochs 250  -dropout 0.5 -global_attention mlp -encoder_type brnn
+```
+
+2. translate
+
+```bash
+python translate.py -data_type video -model data/nmt/model_acc_41.25_ppl_35.38_e12.pt -src_dir data/feats/resnet152_origin -src data/src-test.txt -output pred.txt -gpu 1
+```
+
+3. eval
+
+```bash
+python eval.py  -video_ids data/src-test.txt -pred pred.txt
+```
+
 # OpenNMT-py: Open-Source Neural Machine Translation
 
 [![Build Status](https://travis-ci.org/OpenNMT/OpenNMT-py.svg?branch=master)](https://travis-ci.org/OpenNMT/OpenNMT-py)
