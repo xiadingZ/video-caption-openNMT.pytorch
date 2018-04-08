@@ -9,8 +9,8 @@ then, use [video-classification-3d-cnn-pytorch](https://github.com/kenshohara/vi
  extract features from video. Then mean pool to get a 2048 dim feature for each video, save each feature as 
  `{video id}_c3d.npy`, such as `video0_c3d.npy`, put them under `data/feats/resnet152_origin`.
  
- Then write `src-train.txt, tgt-train.txt, src-val.txt, tgt-val.txt, src-test.txt, tgt-test.txt`, put them under `data`.
- `src_train.txt` has video id line by line, such as `video0 \n video1`, `tgt_train.txt` has captions line by line, 
+ Then write `src-train.txt, tgt-train.txt, src-val.txt, tgt-val.txt, src-test.txt, tgt-test.txt`, put them under 
+ `data\src_train.txt` has video id line by line, such as `video0 \n video1`, `tgt_train.txt` has captions line by line, 
  each line is a caption corresponding to video id in `src_train.txt`. Other files' format is the same as these two.
 
 
