@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 from collections import Counter, defaultdict, OrderedDict
 from itertools import count
 
@@ -12,7 +13,6 @@ from onmt.io.TextDataset import TextDataset
 from onmt.io.ImageDataset import ImageDataset
 from onmt.io.AudioDataset import AudioDataset
 from onmt.io.VideoDataset import VideoDataset
-
 
 def _getstate(self):
     return dict(self.__dict__, stoi=dict(self.stoi))
@@ -99,7 +99,7 @@ def get_num_features(data_type, corpus_file, side):
     """
     Args:
         data_type (str): type of the source input.
-            Options are [text|img|audio|video].
+            Options are [text|img|audio].
         corpus_file (str): file path to get the features.
         side (str): for source or for target.
 
@@ -207,7 +207,7 @@ def build_dataset(fields, data_type, src_path, tgt_path, src_dir=None,
                                num_src_feats, num_tgt_feats,
                                tgt_seq_length=tgt_seq_length,
                                use_filter_pred=use_filter_pred)
-    
+
     elif data_type == 'video':
         dataset = VideoDataset(fields, src_examples_iter, tgt_examples_iter,
                                num_src_feats, num_tgt_feats,
@@ -237,17 +237,19 @@ def _build_field_vocab(field, counter, **kwargs):
 
 
 def build_vocab(train_dataset_files, fields, data_type, share_vocab,
-                src_vocab_size, src_words_min_frequency,
-                tgt_vocab_size, tgt_words_min_frequency):
+                src_vocab_path, src_vocab_size, src_words_min_frequency,
+                tgt_vocab_path, tgt_vocab_size, tgt_words_min_frequency):
     """
     Args:
         train_dataset_files: a list of train dataset pt file.
         fields (dict): fields to build vocab for.
         data_type: "text", "img" or "audio"?
         share_vocab(bool): share source and target vocabulary?
+        src_vocab_path(string): Path to src vocabulary file.
         src_vocab_size(int): size of the source vocabulary.
         src_words_min_frequency(int): the minimum frequency needed to
                 include a source word in the vocabulary.
+        tgt_vocab_path(string): Path to tgt vocabulary file.
         tgt_vocab_size(int): size of the target vocabulary.
         tgt_words_min_frequency(int): the minimum frequency needed to
                 include a target word in the vocabulary.
@@ -259,6 +261,29 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
     for k in fields:
         counter[k] = Counter()
 
+    # Load vocabulary
+    src_vocab = None
+    if len(src_vocab_path) > 0:
+        src_vocab = set([])
+        print('Loading source vocab from %s' % src_vocab_path)
+        assert os.path.exists(src_vocab_path), \
+            'src vocab %s not found!' % src_vocab_path
+        with open(src_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                src_vocab.add(word)
+
+    tgt_vocab = None
+    if len(tgt_vocab_path) > 0:
+        tgt_vocab = set([])
+        print('Loading target vocab from %s' % tgt_vocab_path)
+        assert os.path.exists(tgt_vocab_path), \
+            'tgt vocab %s not found!' % tgt_vocab_path
+        with open(tgt_vocab_path) as f:
+            for line in f:
+                word = line.strip().split()[0]
+                tgt_vocab.add(word)
+
     for path in train_dataset_files:
         dataset = torch.load(path)
         print(" * reloading %s." % path)
@@ -267,6 +292,10 @@ def build_vocab(train_dataset_files, fields, data_type, share_vocab,
                 val = getattr(ex, k, None)
                 if val is not None and not fields[k].sequential:
                     val = [val]
+                elif k == 'src' and src_vocab:
+                    val = [item for item in val if item in src_vocab]
+                elif k == 'tgt' and tgt_vocab:
+                    val = [item for item in val if item in tgt_vocab]
                 counter[k].update(val)
 
     _build_field_vocab(fields["tgt"], counter["tgt"],
@@ -330,7 +359,7 @@ def _make_examples_nfeats_tpl(data_type, src_path, src_dir,
         src_examples_iter, num_src_feats = \
             VideoDataset.make_video_examples_nfeats_tpl(
                 src_path, src_dir)
-
+                
     elif data_type == 'audio':
         src_examples_iter, num_src_feats = \
             AudioDataset.make_audio_examples_nfeats_tpl(

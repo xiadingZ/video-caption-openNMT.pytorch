@@ -15,7 +15,6 @@ from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
                          CNNEncoder, CNNDecoder, AudioEncoder, \
                          VideoEncoder
-
 from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
 
@@ -145,7 +144,8 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     Returns:
         the NMTModel.
     """
-    assert model_opt.model_type in ["text", "img", "audio", "video"], \
+    assert model_opt.model_type in ["text", "img", "audio", 
+    'video'], \
         ("Unsupported model type %s" % (model_opt.model_type))
 
     # Make encoder.
@@ -160,7 +160,6 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
                                model_opt.brnn,
                                model_opt.rnn_size,
                                model_opt.dropout)
-    
     elif model_opt.model_type == "video":
         encoder = VideoEncoder(model_opt.enc_layers,
                                model_opt.brnn,
@@ -191,6 +190,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
         tgt_embeddings.word_lut.weight = src_embeddings.word_lut.weight
 
     decoder = make_decoder(model_opt, tgt_embeddings)
+
     # Make NMTModel(= encoder + decoder).
     model = NMTModel(encoder, decoder)
     model.model_type = model_opt.model_type
@@ -199,7 +199,7 @@ def make_base_model(model_opt, fields, gpu, checkpoint=None):
     if not model_opt.copy_attn:
         generator = nn.Sequential(
             nn.Linear(model_opt.rnn_size, len(fields["tgt"].vocab)),
-            nn.LogSoftmax())
+            nn.LogSoftmax(dim=-1))
         if model_opt.share_decoder_embeddings:
             generator[0].weight = decoder.embeddings.word_lut.weight
     else:

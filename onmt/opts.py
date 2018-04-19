@@ -48,7 +48,7 @@ def model_opts(parser):
     group.add_argument('-model_type', default='text',
                        help="""Type of source model to use. Allows
                        the system to incorporate non-text inputs.
-                       Options are [text|img|audio|video].""")
+                       Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
                        choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
@@ -67,7 +67,8 @@ def model_opts(parser):
                        help='Number of layers in the encoder')
     group.add_argument('-dec_layers', type=int, default=2,
                        help='Number of layers in the decoder')
-    group.add_argument('-dim_vid', type=int, default=4096)
+    group.add_argument('-dim_vid', type=int, default=4096,
+                       help="dimession of video feats.")
     group.add_argument('-rnn_size', type=int, default=500,
                        help='Size of rnn hidden states')
     group.add_argument('-cnn_kernel_width', type=int, default=3,
@@ -126,7 +127,7 @@ def preprocess_opts(parser):
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
                        help="""Type of the source input.
-                       Options are [text|img|video].""")
+                       Options are [text|img].""")
 
     group.add_argument('-train_src', required=True,
                        help="Path to the training source data")
@@ -153,10 +154,12 @@ def preprocess_opts(parser):
     # Dictionary options, for text corpus
 
     group = parser.add_argument_group('Vocab')
-    group.add_argument('-src_vocab',
-                       help="Path to an existing source vocabulary")
-    group.add_argument('-tgt_vocab',
-                       help="Path to an existing target vocabulary")
+    group.add_argument('-src_vocab', default="",
+                       help="""Path to an existing source vocabulary. Format:
+                       one word per line.""")
+    group.add_argument('-tgt_vocab', default="",
+                       help="""Path to an existing target vocabulary. Format:
+                       one word per line.""")
     group.add_argument('-features_vocabs_prefix', type=str, default='',
                        help="Path prefix to existing features vocabularies")
     group.add_argument('-src_vocab_size', type=int, default=50000,
@@ -359,7 +362,8 @@ def train_opts(parser):
     group.add_argument('-tensorboard', action="store_true",
                        help="""Use tensorboardX for visualization during training.
                        Must have the library tensorboardX.""")
-    group.add_argument("-tensorboard_log_dir", type=str, default="runs/onmt",
+    group.add_argument("-tensorboard_log_dir", type=str,
+                       default="runs/onmt",
                        help="""Log directory for Tensorboard.
                        This is also the name of the run.
                        """)
@@ -379,7 +383,7 @@ def translate_opts(parser):
 
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
-                       help="Type of the source input. Options: [text|img|video].")
+                       help="Type of the source input. Options: [text|img].")
 
     group.add_argument('-src',   required=True,
                        help="""Source sequence to decode (one line per
@@ -430,6 +434,12 @@ def translate_opts(parser):
                         (higher = longer generation)""")
     group.add_argument('-beta', type=float, default=-0.,
                        help="""Coverage penalty parameter""")
+    group.add_argument('-block_ngram_repeat', type=int, default=0,
+                       help='Block repetition of ngrams during decoding.')
+    group.add_argument('-ignore_when_blocking', nargs='+', type=str,
+                       default=[],
+                       help="""Ignore these strings when blocking repeats.
+                       You want to block sentence delimiters.""")
     group.add_argument('-replace_unk', action="store_true",
                        help="""Replace the generated UNK tokens with the
                        source token that had highest attention weight. If
