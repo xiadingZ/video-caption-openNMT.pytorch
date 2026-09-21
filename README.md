@@ -1,3 +1,5 @@
+
+
 # Video caption usage
 
 
@@ -29,7 +31,7 @@ python translate.py -data_type video -model data/nmt/model_acc_41.25_ppl_35.38_e
 3. eval
 
 ```bash
-python eval.py  -video_ids data/src-test.txt -pred pred.txt
+python eval.py  -video_ids data/src-test.txt -pred pred.txt -videoinfo_json data/videodatainfo_2017.json
 ```
 
 # OpenNMT-py: Open-Source Neural Machine Translation
